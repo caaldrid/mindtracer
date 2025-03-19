@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- include htmx -->
+    {% load static %}
+    <script src="{% static '/htmx.min.js' %}" crossorigin="anonymous"></script>
+    {% load static %}
+    <script src="{% static '/ws.min.js' %}" crossorigin="anonymous"></script>
+  </head>
+
+  <body>
+    <h1>Hello world</h1>
+
+    <!-- websocket connection -->
+    <div hx-ext="ws" ws-connect="/ws/text/">
+      <!-- input for new messages, send a message to the backend
+      via websocket -->
+      <form id="form" ws-send>
+        <input name="chat_message">
+    </form>
+    </div>
+
+    <!-- location for new messages from the server -->
+    <div id="content"></div>
+
+  </body>
+</html>
