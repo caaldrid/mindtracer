@@ -1,27 +1,109 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <!-- include htmx -->
-    {% load static %}
-    <script src="{% static '/htmx.min.js' %}" crossorigin="anonymous"></script>
-    {% load static %}
-    <script src="{% static '/ws.min.js' %}" crossorigin="anonymous"></script>
-  </head>
+<html lang="en">
 
-  <body>
-    <h1>Hello world</h1>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTMX Live Text Update</title>
+  <!-- include htmx -->
+  {% load static %}
+  <script src="{% static '/htmx.min.js' %}" crossorigin="anonymous"></script>
+  {% load static %}
+  <script src="{% static '/ws.min.js' %}" crossorigin="anonymous"></script>
+</head>
 
-    <!-- websocket connection -->
-    <div hx-ext="ws" ws-connect="/ws/text/">
-      <!-- input for new messages, send a message to the backend
-      via websocket -->
-      <form id="form" ws-send>
-        <input name="chat_message">
-    </form>
-    </div>
+<body hx-ext="ws" ws-connect="/ws/text/" hx-on:keydown="handleKeydown(event)">
+  <h2>Live Text Update</h2>
+  <div id="textContainer">
+    <div class="text-line" hx-on:click="selectLine(event)"></span></div>
+  </div>
 
-    <!-- location for new messages from the server -->
-    <div id="content"></div>
+  <script>
+    let buffer = [];
+    let gapIndex = 0;
+    let timeout;
+    let selectedLine = null;
+    const allowedKeys = /^[a-zA-Z0-9 .,!?;:'"()\[\]{}<>@#$%^&*_+=\\/-]$/;
 
-  </body>
+    function selectLine(event) {
+      let line = event.currentTarget;
+      document.querySelectorAll(".text-line").forEach(el => el.classList.remove("selected"));
+      line.classList.add("selected");
+      selectedLine = line;
+      buffer = Array.from(line.textContent);
+
+      const selection = window.getSelection();
+
+      if (!selection.rangeCount) return;
+
+      let range = selection.getRangeAt(0);
+      // Ensure the range is inside our div
+      if (!div.contains(range.commonAncestorContainer)) return;
+
+      let preCaretRange = range.cloneRange();
+      preCaretRange.selectNodeContents(line);
+      preCaretRange.setEnd(range.startContainer, range.startOffset);
+
+      gapIndex = preCaretRange.toString().length;
+    }
+
+    // Need to handle caret <span class="caret" id="caret">
+    function handleKeydown(event) {
+      if (!selectedLine) return;
+
+      if (event.key.length === 1 && allowedKeys.test(event.key)) {
+        buffer.splice(gapIndex, 0, event.key);
+        gapIndex++;
+        selectedLine.textContent = buffer.join('') || "";
+      } else if (event.key === 'Backspace' && gapIndex > 0) {
+        buffer.splice(gapIndex - 1, 1);
+        gapIndex--;
+        selectedLine.textContent = buffer.join('') || "";
+      } else if (event.key === 'ArrowLeft' && gapIndex > 0) {
+        gapIndex--;
+      } else if (event.key === 'ArrowRight' && gapIndex < buffer.length) {
+        gapIndex++;
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        buffer = [];
+        gapIndex = 0;
+        addNewLine()
+      }
+
+    }
+
+    function addNewLine(event) {
+      htmx.swap("#textContainer", "<div class=\"text-line\" hx-on:click=\"selectLine(event)\">NEW</div>", { swapStyle: "beforeend" })
+    }
+  </script>
+
+  <style>
+    .caret {
+      display: inline-block;
+      width: 1px;
+      height: 1em;
+      background: black;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .text-line {
+      padding: 5px;
+      border: 1px solid #ccc;
+      margin: 5px 0;
+      cursor: pointer;
+    }
+
+    .selected {
+      background-color: #eef;
+      border-color: #00f;
+    }
+  </style>
+</body>
+
 </html>
