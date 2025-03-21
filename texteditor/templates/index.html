@@ -15,7 +15,7 @@
 <body hx-ext="ws" ws-connect="/ws/text/" hx-on:keydown="handleKeydown(event)">
   <h2>Live Text Update</h2>
   <div id="textContainer">
-    <div class="text-line" hx-on:click="selectLine(event)"></span></div>
+    <div class="text-line" hx-on:click="selectLine(event)"></div>
   </div>
 
   <script>
@@ -47,7 +47,7 @@
       gapIndex = preCaretRange.toString().length;
     }
 
-    // Need to handle caret <span class="caret" id="caret">
+    // Need to handle caret <span class="caret" id="caret"></span>
     function handleKeydown(event) {
       if (!selectedLine) return;
 
