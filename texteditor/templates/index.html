@@ -15,50 +15,70 @@
 <body hx-ext="ws" ws-connect="/ws/text/" hx-on:keydown="handleKeydown(event)">
   <h2>Live Text Update</h2>
   <div id="textContainer">
-    <div class="text-line" hx-on:click="selectLine(event)"></div>
+    <div class="text-line selected" hx-on:click="selectLine(event)"><span class="caret" id="caret"></span></div>
   </div>
 
   <script>
     let buffer = [];
     let gapIndex = 0;
-    let timeout;
-    let selectedLine = null;
-    const allowedKeys = /^[a-zA-Z0-9 .,!?;:'"()\[\]{}<>@#$%^&*_+=\\/-]$/;
+    const allowedKeys = /^[a-zA-Z0-9 .,!?;:'`~"()\[\]{}<>@#$%^&*_+=\\/-]$/;
+    const caretHTML = "\<span class=\"caret\" id=\"caret\"\>\<\/span\>";
+
+    function clearSelection() {
+      let prevLine = htmx.find(".selected")
+      if (prevLine != null) {
+        htmx.toggleClass(prevLine, "selected"); // Remove the "selection" class from the previously selected line
+      }
+    }
+
+    function clearCaret() {
+      let line = htmx.find(".selected")
+      let caret = htmx.find(line, ".caret")
+
+      if (caret != null) {
+        htmx.remove(caret)
+        buffer = Array.from(line.textContent);
+      }
+    }
+
+    function moveCaret() {
+      buffer.splice(gapIndex, 0, caretHTML);
+      let newText = buffer.join('') || "";
+      htmx.swap(".selected", newText, { swapStyle: "innerHTML" })
+    }
 
     function selectLine(event) {
-      let line = event.currentTarget;
-      document.querySelectorAll(".text-line").forEach(el => el.classList.remove("selected"));
-      line.classList.add("selected");
-      selectedLine = line;
-      buffer = Array.from(line.textContent);
+      clearCaret();
+      clearSelection();
+      let lineClickedOn = event.currentTarget;
+      htmx.toggleClass(lineClickedOn, "selected"); // Toggle the "selected" class the line we clicked on
+
+      buffer = Array.from(lineClickedOn.textContent);
 
       const selection = window.getSelection();
-
       if (!selection.rangeCount) return;
 
       let range = selection.getRangeAt(0);
       // Ensure the range is inside our div
-      if (!div.contains(range.commonAncestorContainer)) return;
+      if (!lineClickedOn.contains(range.commonAncestorContainer)) return;
 
       let preCaretRange = range.cloneRange();
-      preCaretRange.selectNodeContents(line);
+      preCaretRange.selectNodeContents(lineClickedOn);
       preCaretRange.setEnd(range.startContainer, range.startOffset);
-
+      console.log(preCaretRange.toString())
       gapIndex = preCaretRange.toString().length;
+      moveCaret();
     }
 
-    // Need to handle caret <span class="caret" id="caret"></span>
     function handleKeydown(event) {
-      if (!selectedLine) return;
+      clearCaret()
 
       if (event.key.length === 1 && allowedKeys.test(event.key)) {
         buffer.splice(gapIndex, 0, event.key);
         gapIndex++;
-        selectedLine.textContent = buffer.join('') || "";
       } else if (event.key === 'Backspace' && gapIndex > 0) {
-        buffer.splice(gapIndex - 1, 1);
         gapIndex--;
-        selectedLine.textContent = buffer.join('') || "";
+        buffer.splice(gapIndex, 1);
       } else if (event.key === 'ArrowLeft' && gapIndex > 0) {
         gapIndex--;
       } else if (event.key === 'ArrowRight' && gapIndex < buffer.length) {
@@ -67,14 +87,13 @@
         event.preventDefault();
         buffer = [];
         gapIndex = 0;
-        addNewLine()
+        clearSelection();
+        htmx.swap("#textContainer", "<div class=\"text-line selected\" hx-on:click=\"selectLine(event)\"></div>", { swapStyle: "beforeend" })
       }
 
+      moveCaret();
     }
 
-    function addNewLine(event) {
-      htmx.swap("#textContainer", "<div class=\"text-line\" hx-on:click=\"selectLine(event)\">NEW</div>", { swapStyle: "beforeend" })
-    }
   </script>
 
   <style>
@@ -94,14 +113,11 @@
 
     .text-line {
       padding: 5px;
-      border: 1px solid #ccc;
-      margin: 5px 0;
       cursor: pointer;
     }
 
     .selected {
-      background-color: #eef;
-      border-color: #00f;
+      border: 1px solid rgb(134, 134, 177);
     }
   </style>
 </body>
