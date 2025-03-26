@@ -73,7 +73,6 @@
       let preCaretRange = range.cloneRange();
       preCaretRange.selectNodeContents(lineText);
       preCaretRange.setEnd(range.startContainer, range.startOffset);
-      console.log(preCaretRange.toString())
       gapIndex = preCaretRange.toString().length;
       moveCaret();
     }
@@ -111,12 +110,25 @@
   </script>
 
   <style>
+    body {
+      background-color: #1e1e1e;
+      /* VS Code dark theme background */
+      color: #d4d4d4;
+      /* Default text color */
+      font-family: 'Courier New', Courier, monospace;
+      /* Monospaced font */
+      margin: 0;
+      padding: 0;
+    }
+
     .caret {
       display: inline-block;
-      width: 1px;
+      width: 2px;
       height: 1em;
-      background: black;
+      background: #d4d4d4;
+      /* Light gray caret color */
       animation: blink 1s step-end infinite;
+      vertical-align: middle;
     }
 
     @keyframes blink {
@@ -125,13 +137,44 @@
       }
     }
 
-    .text-line {
-      padding: 5px;
-      cursor: pointer;
+    .line {
+      display: grid;
+      grid-template-columns: 40px auto;
+      /* Line number column and text column */
+      align-items: center;
+      padding: 0 10px;
+      font-size: 14px;
+    }
+
+    .number {
+      color: #858585;
+      /* Dimmed color for line numbers */
+      text-align: right;
+      padding-right: 10px;
+      user-select: none;
+      /* Prevent selection of line numbers */
+    }
+
+    .text {
+      white-space: pre;
+      /* Preserve spaces and line breaks */
+      overflow-wrap: break-word;
+      /* Break long words */
     }
 
     .selected {
-      border: 1px solid rgb(134, 134, 177);
+      background-color: #2d2d2d;
+      /* Highlighted line background */
+    }
+
+    #textContainer {
+      border: 1px solid #333;
+      /* Border around the editor */
+      border-radius: 4px;
+      margin: 10px;
+      padding: 5px 0;
+      background-color: #1e1e1e;
+      /* Match the editor background */
     }
   </style>
 </body>
