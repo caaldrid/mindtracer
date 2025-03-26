@@ -12,7 +12,10 @@
 
 <body hx-on:keydown="handleKeydown(event)">
   <div id="textContainer">
-    <div class="text-line selected" hx-on:click="selectLine(event)"><span class="caret" id="caret"></span></div>
+    <span class="line selected" hx-on:click="selectLine(event)">
+      <span class="number">1</span>
+      <span class="text"><span class="caret" id="caret"></span></span>
+    </span>
   </div>
 
   <script>
@@ -29,19 +32,26 @@
     }
 
     function clearCaret() {
-      let line = htmx.find(".selected")
+      let line = htmx.find(".selected > .text")
       let caret = htmx.find(line, ".caret")
 
       if (caret != null) {
         htmx.remove(caret)
-        buffer = Array.from(line.textContent);
+        buffer = Array.from(line.innerText);
       }
     }
 
     function moveCaret() {
       buffer.splice(gapIndex, 0, caretHTML);
       let newText = buffer.join('') || "";
-      htmx.swap(".selected", newText, { swapStyle: "innerHTML" })
+      htmx.swap(".selected > .text", newText, { swapStyle: "innerHTML" })
+    }
+
+    function updateLineNumbers() {
+      let lines = htmx.findAll(".line");
+      lines.forEach((line, index) => {
+        htmx.find(line, ".number").innerText = index + 1;
+      });
     }
 
     function selectLine(event) {
@@ -50,17 +60,18 @@
       let lineClickedOn = event.currentTarget;
       htmx.toggleClass(lineClickedOn, "selected"); // Toggle the "selected" class the line we clicked on
 
-      buffer = Array.from(lineClickedOn.textContent);
+      let lineText = htmx.find(lineClickedOn, ".text");
+      buffer = Array.from(lineText.innerText);
 
       const selection = window.getSelection();
       if (!selection.rangeCount) return;
 
       let range = selection.getRangeAt(0);
       // Ensure the range is inside our div
-      if (!lineClickedOn.contains(range.commonAncestorContainer)) return;
+      if (!lineText.contains(range.commonAncestorContainer)) return;
 
       let preCaretRange = range.cloneRange();
-      preCaretRange.selectNodeContents(lineClickedOn);
+      preCaretRange.selectNodeContents(lineText);
       preCaretRange.setEnd(range.startContainer, range.startOffset);
       console.log(preCaretRange.toString())
       gapIndex = preCaretRange.toString().length;
@@ -68,7 +79,7 @@
     }
 
     function handleKeydown(event) {
-      clearCaret()
+      clearCaret();
 
       if (event.key.length === 1 && allowedKeys.test(event.key)) {
         buffer.splice(gapIndex, 0, event.key);
@@ -82,10 +93,16 @@
         gapIndex++;
       } else if (event.key === 'Enter') {
         event.preventDefault();
-        buffer = [];
+        // Set the text of currently selected line to everything before the gapIndex
+        let newline = buffer.slice(0, gapIndex);
+        htmx.find(".selected > .text").innerText = newline.join('') || "";
+
+        buffer = buffer.slice(gapIndex, buffer.length);
         gapIndex = 0;
+
         clearSelection();
-        htmx.swap("#textContainer", "<div class=\"text-line selected\" hx-on:click=\"selectLine(event)\"></div>", { swapStyle: "beforeend" })
+        htmx.swap("#textContainer", "<span class=\"line selected\" hx-on:click=\"selectLine(event)\"><span class=\"number\">1</span><span class=\"text\"></span></span>", { swapStyle: "beforeend" });
+        updateLineNumbers();
       }
 
       moveCaret();
