@@ -8,12 +8,9 @@
   <!-- include htmx -->
   {% load static %}
   <script src="{% static '/htmx.min.js' %}" crossorigin="anonymous"></script>
-  {% load static %}
-  <script src="{% static '/ws.min.js' %}" crossorigin="anonymous"></script>
 </head>
 
-<body hx-ext="ws" ws-connect="/ws/text/" hx-on:keydown="handleKeydown(event)">
-  <h2>Live Text Update</h2>
+<body hx-on:keydown="handleKeydown(event)">
   <div id="textContainer">
     <div class="text-line selected" hx-on:click="selectLine(event)"><span class="caret" id="caret"></span></div>
   </div>
