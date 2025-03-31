@@ -98,6 +98,17 @@
         gapIndex--;
       } else if (event.key === 'ArrowRight' && gapIndex < buffer.length) {
         gapIndex++;
+      } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        let selected = htmx.find(".selected");
+        let selectedText = htmx.find(selected, ".text").innerText;
+
+        let target = event.key === 'ArrowUp' ? selected.previousElementSibling : selected.nextElementSibling
+        if (target != null) {
+          clearSelection();
+          buffer = Array.from(htmx.find(target, ".text").innerText);
+          gapIndex = buffer.length < selectedText.length ? buffer.length : gapIndex;
+          htmx.toggleClass(target, "selected");
+        }
       } else if (event.key === 'Enter') {
         event.preventDefault();
         // Set the text of currently selected line to everything before the gapIndex
