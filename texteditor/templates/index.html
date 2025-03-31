@@ -25,9 +25,17 @@
     const caretHTML = "\<span class=\"caret\" id=\"caret\"\>\<\/span\>";
 
     function clearSelection() {
-      let prevLine = htmx.find(".selected")
-      if (prevLine != null) {
-        htmx.toggleClass(prevLine, "selected"); // Remove the "selection" class from the previously selected line
+      let selectedLines = htmx.findAll(".selected");
+      let newLine = htmx.find(".new");
+      let prevLine = null;
+      selectedLines.forEach((line, _) => {
+        if (!line.classList.contains("new")) {
+          htmx.toggleClass(line, "selected"); // Remove the "selection" class from the previously selected line
+        }
+      });
+
+      if (newLine != null) {
+        htmx.toggleClass(newLine, "new"); // Remove the "new" class from the new line now that we have cleared the previous selection
       }
     }
 
@@ -99,8 +107,8 @@
         buffer = buffer.slice(gapIndex, buffer.length);
         gapIndex = 0;
 
+        htmx.swap(".selected", "<span class=\"line selected new\" hx-on:click=\"selectLine(event)\"><span class=\"number\">1</span><span class=\"text\"></span></span>", { swapStyle: "afterend" });
         clearSelection();
-        htmx.swap("#textContainer", "<span class=\"line selected\" hx-on:click=\"selectLine(event)\"><span class=\"number\">1</span><span class=\"text\"></span></span>", { swapStyle: "beforeend" });
         updateLineNumbers();
       }
 
