@@ -94,6 +94,17 @@
       } else if (event.key === 'Backspace' && gapIndex > 0) {
         gapIndex--;
         buffer.splice(gapIndex, 1);
+        
+        if (buffer.length == 0) {
+          let selected = htmx.find(".selected");
+          let lineAbove = selected.previousElementSibling;
+          if (lineAbove != null) {
+            htmx.remove(selected);
+            htmx.toggleClass(lineAbove, "selected");
+            buffer = Array.from(htmx.find(lineAbove, ".text").innerText);
+            gapIndex = buffer.length
+          }
+        }
       } else if (event.key === 'ArrowLeft' && gapIndex > 0) {
         gapIndex--;
       } else if (event.key === 'ArrowRight' && gapIndex < buffer.length) {
@@ -102,7 +113,7 @@
         let selected = htmx.find(".selected");
         let selectedText = htmx.find(selected, ".text").innerText;
 
-        let target = event.key === 'ArrowUp' ? selected.previousElementSibling : selected.nextElementSibling
+        let target = event.key === 'ArrowUp' ? selected.previousElementSibling : selected.nextElementSibling;
         if (target != null) {
           clearSelection();
           buffer = Array.from(htmx.find(target, ".text").innerText);
