@@ -6,7 +6,6 @@ const caretHTML = "\<span class=\"caret\" id=\"caret\"\>\<\/span\>";
 function clearSelection() {
     let selectedLines = htmx.findAll(".selected");
     let newLine = htmx.find(".new");
-    let prevLine = null;
     selectedLines.forEach((line, _) => {
         if (!line.classList.contains("new")) {
             htmx.toggleClass(line, "selected"); // Remove the "selection" class from the previously selected line
@@ -19,11 +18,11 @@ function clearSelection() {
 }
 
 function clearCaret() {
-    let line = htmx.find(".selected > .text")
-    let caret = htmx.find(line, ".caret")
+    let line = htmx.find(".selected > .text");
+    let caret = htmx.find(line, ".caret");
 
     if (caret != null) {
-        htmx.remove(caret)
+        htmx.remove(caret);
         buffer = Array.from(line.innerText);
     }
 }
@@ -31,7 +30,7 @@ function clearCaret() {
 function moveCaret() {
     buffer.splice(gapIndex, 0, caretHTML);
     let newText = buffer.join('') || "";
-    htmx.swap(".selected > .text", newText, { swapStyle: "innerHTML" })
+    htmx.swap(".selected > .text", newText, { swapStyle: "innerHTML" });
 }
 
 function updateLineNumbers() {
@@ -77,13 +76,13 @@ function handleKeydown(event) {
 
             let lineAbove = selected.previousElementSibling;
             if (lineAbove != null) {
-                let lineAboveText = htmx.find(lineAbove, ".text").innerText
+                let lineAboveText = htmx.find(lineAbove, ".text").innerText;
                 htmx.remove(selected);
                 htmx.toggleClass(lineAbove, "selected");
 
                 // Append the text of the deleted line with whats in the line above 
                 buffer = Array.from(lineAboveText + remainingText);
-                gapIndex = buffer.length
+                gapIndex = buffer.length;
             }
         } else {
             gapIndex--;
