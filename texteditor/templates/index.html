@@ -8,18 +8,7 @@
   <!-- include htmx -->
   {% load static %}
   <script src="{% static '/htmx.min.js' %}" crossorigin="anonymous"></script>
-</head>
-
-<body hx-on:keydown="handleKeydown(event)">
-  <div id="textContainer">
-    <span class="line selected" hx-on:click="selectLine(event)">
-      <span class="number">1</span>
-      <span class="text"><span class="caret" id="caret"></span></span>
-    </span>
-  </div>
-
   <script src="{% static 'texteditor/js/editor.js' %}" crossorigin="anonymous"></script>
-
   <style>
     body {
       background-color: #1e1e1e;
@@ -88,6 +77,11 @@
       /* Match the editor background */
     }
   </style>
+</head>
+
+<body hx-get="/new-line" hx-trigger="load" hx-target="#textContainer" hx-swap="beforeend"
+  hx-on:keydown="handleKeydown(event)">
+  <div id="textContainer"></div>
 </body>
 
 </html>

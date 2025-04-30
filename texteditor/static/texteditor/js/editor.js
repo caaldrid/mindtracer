@@ -3,20 +3,6 @@ let gapIndex = 0;
 const allowedKeys = /^[a-zA-Z0-9 .,!?;:'`~"()\[\]{}<>@#$%^&*_+=\\/-]$/;
 const caretHTML = "\<span class=\"caret\" id=\"caret\"\>\<\/span\>";
 
-function clearSelection() {
-    let selectedLines = htmx.findAll(".selected");
-    let newLine = htmx.find(".new");
-    selectedLines.forEach((line, _) => {
-        if (!line.classList.contains("new")) {
-            htmx.toggleClass(line, "selected"); // Remove the "selection" class from the previously selected line
-        }
-    });
-
-    if (newLine != null) {
-        htmx.toggleClass(newLine, "new"); // Remove the "new" class from the new line now that we have cleared the previous selection
-    }
-}
-
 function clearCaret() {
     let line = htmx.find(".selected > .text");
     let caret = htmx.find(line, ".caret");
@@ -42,7 +28,7 @@ function updateLineNumbers() {
 
 function selectLine(event) {
     clearCaret();
-    clearSelection();
+    htmx.toggleClass(htmx.find(".selected"), "selected")
     let lineClickedOn = event.currentTarget;
     htmx.toggleClass(lineClickedOn, "selected"); // Toggle the "selected" class the line we clicked on
 
@@ -64,57 +50,77 @@ function selectLine(event) {
 }
 
 function handleKeydown(event) {
+    if (event.ctrlKey) {
+        return;
+    }
     clearCaret();
+    let key = event.key;
+    let selected = htmx.find(".selected");
 
-    if (event.key.length === 1 && allowedKeys.test(event.key)) {
-        buffer.splice(gapIndex, 0, event.key);
-        gapIndex++;
-    } else if (event.key === 'Backspace') {
-        if (gapIndex == 0) {
-            let selected = htmx.find(".selected");
-            let remainingText = htmx.find(selected, ".text").innerText;
+    switch (key) {
+        case 'Backspace':
+            if (gapIndex == 0) {
+                let remainingText = htmx.find(selected, ".text").innerText;
 
-            let lineAbove = selected.previousElementSibling;
-            if (lineAbove != null) {
-                let lineAboveText = htmx.find(lineAbove, ".text").innerText;
-                htmx.remove(selected);
-                htmx.toggleClass(lineAbove, "selected");
+                let lineAbove = selected.previousElementSibling;
+                if (lineAbove != null) {
+                    let lineAboveText = htmx.find(lineAbove, ".text").innerText;
+                    htmx.remove(selected);
+                    htmx.toggleClass(lineAbove, "selected");
 
-                // Append the text of the deleted line with whats in the line above 
-                buffer = Array.from(lineAboveText + remainingText);
-                gapIndex = buffer.length;
+                    // Append the text of the deleted line with whats in the line above 
+                    buffer = Array.from(lineAboveText + remainingText);
+                    gapIndex = buffer.length;
+                }
+            } else {
+                gapIndex--;
+                buffer.splice(gapIndex, 1);
             }
-        } else {
-            gapIndex--;
-            buffer.splice(gapIndex, 1);
-        }
-    } else if (event.key === 'ArrowLeft' && gapIndex > 0) {
-        gapIndex--;
-    } else if (event.key === 'ArrowRight' && gapIndex < buffer.length) {
-        gapIndex++;
-    } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
-        let selected = htmx.find(".selected");
-        let selectedText = htmx.find(selected, ".text").innerText;
+            break;
+        case 'ArrowLeft':
+            if (gapIndex > 0) {
+                gapIndex--;
+            }
+            break;
+        case 'ArrowRight':
+            if (gapIndex < buffer.length) {
+                gapIndex++;
+            }
+            break;
+        case 'ArrowUp':
+        case 'ArrowDown':
+            let selectedText = htmx.find(selected, ".text").innerText;
+            let target = event.key === 'ArrowUp' ? selected.previousElementSibling : selected.nextElementSibling;
+            if (target != null) {
+                htmx.toggleClass(htmx.find(".selected"), "selected")
+                
+                buffer = Array.from(htmx.find(target, ".text").innerText);
+                gapIndex = buffer.length < selectedText.length ? buffer.length : gapIndex;
+                htmx.toggleClass(target, "selected");
+            }
+            break;
+        case 'Enter':
+            event.preventDefault();
+            // Split the text of currently selected line at the gapIndex
+            let newline = buffer.slice(0, gapIndex);
+            htmx.find(selected, ".text").innerText = newline.join('') || "";
 
-        let target = event.key === 'ArrowUp' ? selected.previousElementSibling : selected.nextElementSibling;
-        if (target != null) {
-            clearSelection();
-            buffer = Array.from(htmx.find(target, ".text").innerText);
-            gapIndex = buffer.length < selectedText.length ? buffer.length : gapIndex;
-            htmx.toggleClass(target, "selected");
-        }
-    } else if (event.key === 'Enter') {
-        event.preventDefault();
-        // Set the text of currently selected line to everything before the gapIndex
-        let newline = buffer.slice(0, gapIndex);
-        htmx.find(".selected > .text").innerText = newline.join('') || "";
+            buffer = buffer.slice(gapIndex, buffer.length);
+            gapIndex = 0;
 
-        buffer = buffer.slice(gapIndex, buffer.length);
-        gapIndex = 0;
 
-        htmx.swap(".selected", "<span class=\"line selected new\" hx-on:click=\"selectLine(event)\"><span class=\"number\">1</span><span class=\"text\"></span></span>", { swapStyle: "afterend" });
-        clearSelection();
-        updateLineNumbers();
+            htmx.ajax("GET", "/new-line", {target: ".selected", swap: "afterend"}).then(() => {
+                htmx.toggleClass(htmx.find(".selected"), "selected");
+                updateLineNumbers();
+                moveCaret();
+            });
+            return;
+        default:
+            if  (allowedKeys.test(key)) {
+                buffer.splice(gapIndex, 0, event.key);
+                gapIndex++;
+            }
+            break;
     }
 
     moveCaret();
