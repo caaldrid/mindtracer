@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "name": "Python: Remote Attach",
+            "type": "python",
+            "request": "attach",
+            "host": "0.0.0.0",
+            "port": 6793,
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}/main/"
+                }
+            ],
+            "justMyCode": false,
+            "django": true
+        }
+    ]
+}
