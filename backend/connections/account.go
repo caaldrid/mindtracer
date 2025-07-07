@@ -34,9 +34,10 @@ func setupAccountHandler(db *gorm.DB, router *gin.Engine) {
 
 	g := router.Group("/api/auth")
 	g.POST("/register", account.register)
+	g.POST("/login", account.login)
 }
 
-func (a accountHandler) register(ctx *gin.Context) {
+func (a *accountHandler) register(ctx *gin.Context) {
 	var authInput authRegister
 
 	if err := ctx.ShouldBindJSON(&authInput); err != nil {
@@ -77,4 +78,27 @@ func (a accountHandler) register(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, fmt.Sprintf("%s has been registered", newUser.UserName))
+}
+
+func (a *accountHandler) login(ctx *gin.Context) {
+	var authInput authLogin
+
+	if err := ctx.ShouldBindJSON(&authInput); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var foundUser models.User
+
+	if err := a.db.Where("user_name=?", authInput.Username).Find(&foundUser).Error; err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid  UserName"})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(authInput.Password)); err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Password"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, fmt.Sprintf("%s has been logged in", foundUser.UserName))
 }
