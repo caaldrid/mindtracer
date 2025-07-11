@@ -17,7 +17,10 @@ func StartServer(c setup.Config) {
 
 	router := gin.Default()
 
-	setupAccountHandler(db, router)
+	setupAccountHandler(db, router, c)
+
+	authorized := router.Group("/api/")
+	authorized.Use(jwtAuthMiddleware(c.SecretKey))
 
 	if err := router.Run(fmt.Sprintf(":%s", c.ServerPort)); err != nil {
 		log.Fatal("Failed to start router", err)

@@ -11,8 +11,8 @@ type Config struct {
 	DBName         string `mapstructure:"POSTGRES_DB"`
 	DBPort         string `mapstructure:"POSTGRES_PORT"`
 	ServerPort     string `mapstructure:"PORT"`
-
-	ClientOrigin string `mapstructure:"CLIENT_ORIGIN"`
+	SecretKey      string `mapstructure:"SECRET_KEY"`
+	TokenLifespan  int    `mapstructure:"TOKEN_LIFESPAN_HOURS"`
 }
 
 func LoadConfig(path string) (config Config, err error) {
