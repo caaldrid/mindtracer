@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"
 import type { Dispatch, SetStateAction } from "react"
 
 interface loginProp {
@@ -8,6 +9,7 @@ interface loginProp {
 const Login: React.FC<loginProp> = ({ stateHandler }: loginProp) => {
   const [username, setUserName] = useState<string>();
   const [password, setPassword] = useState<string>();
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     if (username && password) {
@@ -33,6 +35,8 @@ const Login: React.FC<loginProp> = ({ stateHandler }: loginProp) => {
           <button type="submit">Submit</button>
         </div>
       </form>
+      <h1> Not a user? Signup Now! </h1>
+      <button onClick={() => navigate("/register")}>Register</button>
     </div>
   );
 }
