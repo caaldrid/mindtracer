@@ -185,5 +185,5 @@ func (a *accountHandler) login(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"token": ss})
+	ctx.JSON(http.StatusOK, gin.H{"accessToken": ss})
 }
