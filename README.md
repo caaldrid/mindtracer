@@ -2,7 +2,7 @@
 
 A full-stack personal information management app built on the [PARA method](https://fortelabs.com/blog/para/) — a simple framework for organizing everything that matters into four categories: Projects, Areas, Resources, and Archives.
 
-Built as a learning project working toward a cloud-native full-stack skillset. The end goal is an AI-powered productivity tool designed specifically for ADHD brains.
+The end goal is an AI-powered productivity tool designed specifically for ADHD brains.
 
 ---
 
