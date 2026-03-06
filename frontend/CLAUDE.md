@@ -50,3 +50,32 @@ out the PARA resource views against the API built in Phase 2.
 - [ ] Update this CLAUDE.md with the actual tech stack
 - [ ] Confirm API base URL config and auth token handling strategy
 - [ ] Plan UI flows for each PARA resource (Projects, Areas, Resources, Archives)
+
+## UX & Navigation Decisions
+
+These decisions were made during the Phase 2 data model design session.
+
+### Navigation structure
+
+- **Landing page / Areas view** — shows all of the user's Areas. This is the entry point after login.
+- **Area detail page** — shows all Projects within a selected Area. Projects can only be created from this view (enforces the Area-first data model constraint).
+- **Project detail page** — shows full project info: description, TODOs, linked Resources, etc.
+- **Resources page** — standalone view for all Resources. Not nested under any Area or Project.
+- **Archive page** — dedicated page with three tabs: Areas, Projects, Resources. Each tab queries its respective table for `is_archived = true` items.
+
+### Archive behavior
+
+- Archive/unarchive is a toggle (flip `is_archived` flag). No data moves — fully reversible.
+- Archived items are hidden from all active views and only visible on the Archive page.
+- Each tab on the Archive page makes its own query to its respective table.
+
+### Project-Resource relationship
+
+- Resources are standalone and not created from within a Project.
+- A Project can link to any number of existing Resources (many-to-many).
+- The Project detail page will have a way to search/select Resources to link.
+
+### Onboarding
+
+- First-time users are guided to create their first Area before anything else.
+- There is no way to create a Project outside of an Area's page.
