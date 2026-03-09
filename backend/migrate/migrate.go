@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/caaldrid/mindtracer/backend/models"
@@ -20,6 +19,13 @@ func main() {
 	}
 
 	DB.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
+
 	DB.AutoMigrate(&models.User{})
-	fmt.Println("? Migration complete")
+	DB.AutoMigrate(&models.Area{})
+	DB.AutoMigrate(&models.Resource{})
+	DB.AutoMigrate(&models.Project{})
+	DB.AutoMigrate(&models.ToDo{})
+	DB.AutoMigrate(&models.ProjectResource{})
+
+	log.Println("? Migration complete")
 }
