@@ -135,6 +135,31 @@ project_resources    (join table — many-to-many between projects and resources
   PRIMARY KEY (project_id, resource_id)
 ```
 
+## Local Dev Runbook
+
+All commands run from the `backend/` directory.
+
+**1. Copy and fill in environment config (first time only)**
+```
+cp app.env.example app.env
+# edit app.env with your values
+```
+
+**2. Start Postgres**
+```
+docker compose up -d
+```
+
+**3. Run migrations**
+```
+go run ./migrate/migrate.go
+```
+
+**4. Start the API server**
+```
+go run main.go
+```
+
 ## Current State
 
 - Auth endpoints implemented: `POST /api/auth/register`, `POST /api/auth/login`
@@ -142,5 +167,5 @@ project_resources    (join table — many-to-many between projects and resources
 - PostgreSQL connection + GORM auto-migrate wired up
 - Docker Compose local dev environment ready
 - **Complete**: GORM models — `area.go`, `project.go`, `todo.go`, `resource.go` (includes `ProjectResource` join table)
-- **Next**: Update `backend/migrate/migrate.go` to register new models with GORM auto-migrate
-- **Not yet built**: CRUD endpoints for all PARA resources
+- **Complete**: `migrate/migrate.go` updated to register all PARA models
+- **Next**: CRUD endpoints for all PARA resources
