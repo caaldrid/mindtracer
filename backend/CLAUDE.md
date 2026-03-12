@@ -160,6 +160,11 @@ go run ./migrate/migrate.go
 go run ./fixtures/seed.go
 ```
 
+**4a. Clear the database**
+```
+go run ./fixtures/seed.go -teardown
+```
+
 **5. Start the API server**
 ```
 go run main.go
