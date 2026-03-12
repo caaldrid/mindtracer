@@ -1,0 +1,126 @@
+[
+  {
+    "name": "Health",
+    "description": "Physical and mental wellbeing — exercise, sleep, nutrition, and stress management.",
+    "projects": [
+      {
+        "name": "Weightloss",
+        "description": "Tracking nutrition and exercise to hit a target weight through consistent habits.",
+        "tasks": [
+          {
+            "title": "Research workout programs",
+            "description": "Compare HIIT, strength training, and hybrid programs to find the best fit.",
+            "status": "Closed",
+            "due_in_days": -14,
+            "completed_in_days": -14
+          },
+          {
+            "title": "Schedule weekly gym sessions",
+            "description": "Block time on the calendar for 3 sessions per week.",
+            "status": "Working",
+            "due_in_days": 7,
+            "prerequisite": {
+              "title": "Pick a gym",
+              "description": "Evaluate nearby gyms by cost, equipment, and hours.",
+              "status": "Closed",
+              "due_in_days": -7,
+              "completed_in_days": -8
+            }
+          },
+          {
+            "title": "Log meals for one week",
+            "description": "Use a calorie tracking app to establish a baseline intake.",
+            "status": "Inactive",
+            "due_in_days": 14
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Learning",
+    "description": "Ongoing skill development — courses, books, side projects, and professional growth.",
+    "projects": [
+      {
+        "name": "Mindtracer - Frontend",
+        "description": "Building the React/TypeScript frontend that consumes the mindtracer API.",
+        "prerequisite": {
+          "name": "Mindtracer - Backend",
+          "description": "Building the Go REST API for the mindtracer app — PARA models, CRUD endpoints, and auth.",
+          "tasks": [
+            {
+              "title": "Design PARA data models",
+              "description": "Define Area, Project, ToDo, and Resource structs with GORM tags.",
+              "status": "Closed",
+              "due_in_days": -5,
+              "completed_in_days": -5
+            },
+            {
+              "title": "Implement CRUD endpoints for Areas",
+              "description": "Build GET, POST, PATCH, DELETE handlers for the /areas resource.",
+              "status": "Working",
+              "due_in_days": 10,
+              "prerequisite": {
+                "title": "Wire up GORM migrations",
+                "description": "Register all models in migrate.go and verify schema creation.",
+                "status": "Closed",
+                "due_in_days": -10,
+                "completed_in_days": -11
+              }
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "title": "Set up React project with TypeScript",
+            "description": "Scaffold with Vite, configure tsconfig, and install base dependencies.",
+            "status": "Inactive",
+            "due_in_days": 28
+          },
+          {
+            "title": "Build Area list view",
+            "description": "Fetch and display all Areas from the API with basic styling.",
+            "status": "Inactive",
+            "due_in_days": 42,
+            "prerequisite": {
+              "title": "Create API client module",
+              "description": "Set up a typed fetch wrapper that handles auth headers and errors.",
+              "status": "Inactive",
+              "due_in_days": 35
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Literacy",
+    "description": "Reading habits and comprehension — books, articles, and building a consistent reading practice.",
+    "projects": [
+      {
+        "name": "Reading List",
+        "description": "Working through a curated list of books with notes and key takeaways.",
+        "tasks": [
+          {
+            "title": "Read 'Unapologetic ADHD'",
+            "description": "Work through the full book, highlighting key frameworks and strategies.",
+            "status": "Working",
+            "due_in_days": 21
+          },
+          {
+            "title": "Write key takeaways",
+            "description": "Summarize the most actionable insights into a personal reference note.",
+            "status": "Inactive",
+            "due_in_days": 28,
+            "prerequisite": {
+              "title": "Finish reading 'Unapologetic ADHD'",
+              "description": "Complete the final chapters before summarizing.",
+              "status": "Inactive",
+              "due_in_days": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

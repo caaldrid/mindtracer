@@ -155,7 +155,12 @@ docker compose up -d
 go run ./migrate/migrate.go
 ```
 
-**4. Start the API server**
+**4. Seed the database**
+```
+go run ./fixtures/seed.go
+```
+
+**5. Start the API server**
 ```
 go run main.go
 ```
@@ -168,4 +173,13 @@ go run main.go
 - Docker Compose local dev environment ready
 - **Complete**: GORM models — `area.go`, `project.go`, `todo.go`, `resource.go` (includes `ProjectResource` join table)
 - **Complete**: `migrate/migrate.go` updated to register all PARA models
+- **Complete**: `fixtures/seed.go` — loads from `fixtures/seed_data.json`, seeds user + areas + projects + todos with prerequisites and due dates. Verified working.
 - **Next**: CRUD endpoints for all PARA resources
+
+## Seed Script Design
+
+- `fixtures/seed_data.json` holds all seed data as plain JSON — edit this to change seed content
+- `fixtures/seed.go` reads the JSON, converts to internal seed structs, and inserts into the DB
+- Date fields (`due_date`, `completed_at`) are stored as day offsets (`due_in_days`, `completed_in_days`) in JSON and computed at runtime relative to when the seed runs
+- JSON structs (`todoJSON`, `projectJSON`, `areaJSON`) and their `toSeed()` methods live in `seed.go` — they are seed-specific and do not belong in the models package
+- Idempotent: checks for the seed user by email before inserting anything
