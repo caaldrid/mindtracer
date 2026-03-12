@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"flag"
 	"log"
 	"os"
 	"time"
@@ -152,11 +153,33 @@ func main() {
 		log.Fatal("Could not load environment variables", err)
 	}
 
+	teardown := flag.Bool("teardown", false, "Truncate all tables and exit")
+	flag.Parse()
+
 	DB, err := setup.ConnectDB(config)
 	if err != nil {
 		log.Fatal("Could connect to database instance", err)
 	}
 	cntx := context.Background()
+
+	if *teardown {
+		tables, err := DB.Migrator().GetTables()
+		if err != nil {
+			log.Fatalf("Could not retrieve tables: %s", err.Error())
+		}
+		if len(tables) == 0 {
+			log.Println("No tables found — nothing to clear.")
+			return
+		}
+		for _, table := range tables {
+			if err := DB.WithContext(cntx).Exec("TRUNCATE TABLE " + table + " CASCADE").Error; err != nil {
+				log.Fatalf("Failed to truncate %s: %s", table, err.Error())
+			}
+			log.Printf("Truncated %s", table)
+		}
+		log.Println("Database cleared.")
+		return
+	}
 
 	areas, err := loadAreas("fixtures/seed_data.json")
 	if err != nil {
