@@ -18,9 +18,9 @@ import (
 )
 
 type accountHandler struct {
-	db             *gorm.DB
-	secret         string
-	token_lifespan int
+	db            *gorm.DB
+	secret        string
+	TokenLifespan int
 }
 
 type authRegister struct {
@@ -41,9 +41,9 @@ type customJWTClaim struct {
 
 func setupAccountHandler(db *gorm.DB, router *gin.Engine, c setup.Config) {
 	account := accountHandler{
-		db:             db,
-		secret:         c.SecretKey,
-		token_lifespan: c.TokenLifespan,
+		db:            db,
+		secret:        c.SecretKey,
+		TokenLifespan: c.TokenLifespan,
 	}
 
 	g := router.Group("/api/auth")
@@ -71,7 +71,7 @@ func jwtAuthMiddleware(secret string) gin.HandlerFunc {
 		switch {
 		case token != nil && token.Valid:
 			if claims, ok := token.Claims.(*customJWTClaim); ok {
-				c.Request.Header.Add("uid", claims.UID)
+				c.Set(UserIDContextKey, claims.UID)
 				c.Next()
 				return
 			}
@@ -107,13 +107,13 @@ func (a *accountHandler) register(ctx *gin.Context) {
 	var foundUser models.User
 
 	if err := a.db.Where("user_name=?", authInput.Username).Find(&foundUser).Error; err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if foundUser.ID != uuid.Nil {
 		ctx.JSON(
-			http.StatusBadRequest,
+			http.StatusConflict,
 			gin.H{"error": "User already exists for the given Username"},
 		)
 		return
@@ -121,7 +121,7 @@ func (a *accountHandler) register(ctx *gin.Context) {
 
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(authInput.Password), bcrypt.DefaultCost)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -132,11 +132,11 @@ func (a *accountHandler) register(ctx *gin.Context) {
 	}
 
 	if err := a.db.Create(&newUser).Error; err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, fmt.Sprintf("%s has been registered", newUser.UserName))
+	ctx.JSON(http.StatusCreated, fmt.Sprintf("%s has been registered", newUser.UserName))
 }
 
 func (a *accountHandler) login(ctx *gin.Context) {
@@ -149,8 +149,16 @@ func (a *accountHandler) login(ctx *gin.Context) {
 
 	var foundUser models.User
 
-	if err := a.db.Where("user_name=?", authInput.Username).Find(&foundUser).Error; err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid  UserName"})
+	if err := a.db.Where("user_name=?", authInput.Username).First(&foundUser).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid  UserName"})
+			return
+		}
+		ctx.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("Error: %s", err.Error())},
+		)
 		return
 	}
 
@@ -168,7 +176,7 @@ func (a *accountHandler) login(ctx *gin.Context) {
 		jwt.RegisteredClaims{
 			// A usual scenario is to set the expiration time relative to the current time
 			ExpiresAt: jwt.NewNumericDate(
-				time.Now().Add(time.Hour * time.Duration(a.token_lifespan)),
+				time.Now().Add(time.Hour * time.Duration(a.TokenLifespan)),
 			),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			NotBefore: jwt.NewNumericDate(time.Now()),
