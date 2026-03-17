@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/caaldrid/mindtracer/backend/connections"
+	"github.com/caaldrid/mindtracer/backend/api"
 	"github.com/caaldrid/mindtracer/backend/setup"
 )
 
@@ -12,5 +12,5 @@ func main() {
 	if err != nil {
 		log.Fatal("Could not load environment variables", err)
 	}
-	connections.StartServer(config)
+	api.StartServer(config)
 }

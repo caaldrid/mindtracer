@@ -1,4 +1,4 @@
-package connections
+package api
 
 import (
 	"errors"
@@ -154,7 +154,10 @@ func (a *accountHandler) login(ctx *gin.Context) {
 		return
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(foundUser.Password), []byte(authInput.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(
+		[]byte(foundUser.Password),
+		[]byte(authInput.Password),
+	); err != nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid Password"})
 		return
 	}
