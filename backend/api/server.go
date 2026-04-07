@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"github.com/caaldrid/mindtracer/backend/setup"
 )
@@ -30,19 +31,20 @@ func CORSMiddleware(allowedOrigin string) gin.HandlerFunc {
 	}
 }
 
-func StartServer(c setup.Config) {
-	db, err := setup.ConnectDB(c)
-	if err != nil {
-		log.Fatal("? Could connect to database instance", err)
-	}
-
+func ConfigRouter(c setup.Config, DB *gorm.DB) *gin.Engine {
 	router := gin.Default()
 	router.Use(CORSMiddleware("*"))
 
-	setupAccountHandler(db, router, c)
+	setupAccountHandler(DB, router, c)
 
 	authorized := router.Group("/api/")
 	authorized.Use(jwtAuthMiddleware(c.SecretKey))
+
+	return router
+}
+
+func StartServer(c setup.Config, DB *gorm.DB) {
+	router := ConfigRouter(c, DB)
 
 	if err := router.Run(fmt.Sprintf(":%s", c.ServerPort)); err != nil {
 		log.Fatal("Failed to start router", err)

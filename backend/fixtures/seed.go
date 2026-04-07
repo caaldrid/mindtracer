@@ -156,7 +156,7 @@ func main() {
 	teardown := flag.Bool("teardown", false, "Truncate all tables and exit")
 	flag.Parse()
 
-	DB, err := setup.ConnectDB(config)
+	DB, err := setup.ConnectDB(setup.FormatDBConnectionString(config))
 	if err != nil {
 		log.Fatal("Could connect to database instance", err)
 	}
@@ -172,7 +172,9 @@ func main() {
 			return
 		}
 		for _, table := range tables {
-			if err := DB.WithContext(cntx).Exec("TRUNCATE TABLE " + table + " CASCADE").Error; err != nil {
+			if err := DB.WithContext(cntx).
+				Exec("TRUNCATE TABLE " + table + " CASCADE").
+				Error; err != nil {
 				log.Fatalf("Failed to truncate %s: %s", table, err.Error())
 			}
 			log.Printf("Truncated %s", table)
