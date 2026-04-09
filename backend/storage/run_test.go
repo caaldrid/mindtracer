@@ -1,20 +1,21 @@
-package api_test
+package storage_test
 
 import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"log"
-	"net/http/httptest"
 	"os"
 	"testing"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"gorm.io/gorm"
 
-	"github.com/caaldrid/mindtracer/backend/api"
 	"github.com/caaldrid/mindtracer/backend/setup"
 )
+
+var TestDB *gorm.DB
 
 func randomString(size int) string {
 	b := make([]byte, size)
@@ -22,23 +23,14 @@ func randomString(size int) string {
 	return hex.EncodeToString(b)
 }
 
-var TestServer *httptest.Server
-
 func TestMain(m *testing.M) {
 	ctx := context.Background()
-	c := setup.Config{
-		DBUserName:     "postgres",
-		DBUserPassword: randomString(16),
-		DBName:         "mindtracer",
-		SecretKey:      randomString(32),
-		TokenLifespan:  4,
-	}
 
 	postgresContainer, _ := postgres.Run(ctx,
 		"postgres:18.3-trixie",
-		postgres.WithDatabase(c.DBName),
-		postgres.WithUsername(c.DBUserName),
-		postgres.WithPassword(c.DBUserPassword),
+		postgres.WithDatabase("mindtracer"),
+		postgres.WithUsername("postgres"),
+		postgres.WithPassword(randomString(16)),
 		postgres.BasicWaitStrategies(),
 	)
 
@@ -49,21 +41,18 @@ func TestMain(m *testing.M) {
 
 	DB, err := setup.ConnectDB(cString)
 	if err != nil {
-		log.Fatal("? Could connect to database instance", err)
+		log.Fatal("Could not connect to database instance", err)
 	}
 
 	setup.MigrateModels(DB)
-	router := api.ConfigRouter(c, DB)
 
-	TestServer = httptest.NewServer(router)
+	TestDB = DB
 
 	code := m.Run()
 
 	if err := testcontainers.TerminateContainer(postgresContainer); err != nil {
 		log.Printf("failed to terminate container: %s", err)
 	}
-
-	TestServer.Close()
 
 	os.Exit(code)
 }

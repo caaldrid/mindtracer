@@ -5,8 +5,9 @@ import (
 	"flag"
 	"log"
 
-	"github.com/caaldrid/mindtracer/backend/api"
+	"github.com/caaldrid/mindtracer/backend/handlers"
 	"github.com/caaldrid/mindtracer/backend/setup"
+	"github.com/caaldrid/mindtracer/backend/storage"
 )
 
 func main() {
@@ -44,8 +45,10 @@ func main() {
 		if err := setup.TeardownDB(cntx, DB); err != nil {
 			log.Fatalf("Teardown failed: %s", err)
 		}
-
 	default:
-		api.StartServer(config, DB)
+		store := storage.Storage{
+			Users: storage.NewUserStorage(DB),
+		}
+		handlers.StartServer(config, store)
 	}
 }
