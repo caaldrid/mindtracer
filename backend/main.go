@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 
@@ -12,8 +13,11 @@ func main() {
 	runMigration := flag.Bool(
 		"migrate",
 		false,
-		"Tells us to run migration instead of starting the server",
+		"Runs DB migration instead of starting the server.",
 	)
+
+	seedDatabase := flag.Bool("seed", false, "Seed the database with fixture data.")
+	teardownDatabase := flag.Bool("teardown", false, "Truncate all tables and exit.")
 
 	flag.Parse()
 
@@ -27,9 +31,21 @@ func main() {
 		log.Fatal("? Could connect to database instance", err)
 	}
 
-	if *runMigration {
+	cntx := context.Background()
+
+	switch {
+	case *runMigration:
 		setup.MigrateModels(DB)
-	} else {
+	case *seedDatabase:
+		if err := setup.SeedDB(cntx, DB); err != nil {
+			log.Fatalf("Seed failed: %s", err)
+		}
+	case *teardownDatabase:
+		if err := setup.TeardownDB(cntx, DB); err != nil {
+			log.Fatalf("Teardown failed: %s", err)
+		}
+
+	default:
 		api.StartServer(config, DB)
 	}
 }

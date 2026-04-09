@@ -1,11 +1,11 @@
-package main
+package setup
 
 import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
-	"flag"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -15,7 +15,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/caaldrid/mindtracer/backend/models"
-	"github.com/caaldrid/mindtracer/backend/setup"
 )
 
 func dueIn(days int) *time.Time {
@@ -147,45 +146,30 @@ func generatePassword(length int) (string, error) {
 	return string(bytePassword), nil
 }
 
-func main() {
-	config, err := setup.LoadConfig(".")
+func TeardownDB(cntx context.Context, DB *gorm.DB) error {
+	tables, err := DB.Migrator().GetTables()
 	if err != nil {
-		log.Fatal("Could not load environment variables", err)
+		return fmt.Errorf("Could not retrieve tables: %s", err.Error())
 	}
+	if len(tables) == 0 {
+		log.Println("No tables found — nothing to clear.")
+	}
+	for _, table := range tables {
+		if err := DB.WithContext(cntx).
+			Exec("TRUNCATE TABLE " + table + " CASCADE").
+			Error; err != nil {
+			return fmt.Errorf("Failed to truncate %s: %s", table, err.Error())
+		}
+		log.Printf("Truncated %s", table)
+	}
+	log.Println("Database cleared.")
+	return nil
+}
 
-	teardown := flag.Bool("teardown", false, "Truncate all tables and exit")
-	flag.Parse()
-
-	DB, err := setup.ConnectDB(setup.FormatDBConnectionString(config))
+func SeedDB(cntx context.Context, DB *gorm.DB) error {
+	areas, err := loadAreas("setup/fixtures/seed_data.json")
 	if err != nil {
-		log.Fatal("Could connect to database instance", err)
-	}
-	cntx := context.Background()
-
-	if *teardown {
-		tables, err := DB.Migrator().GetTables()
-		if err != nil {
-			log.Fatalf("Could not retrieve tables: %s", err.Error())
-		}
-		if len(tables) == 0 {
-			log.Println("No tables found — nothing to clear.")
-			return
-		}
-		for _, table := range tables {
-			if err := DB.WithContext(cntx).
-				Exec("TRUNCATE TABLE " + table + " CASCADE").
-				Error; err != nil {
-				log.Fatalf("Failed to truncate %s: %s", table, err.Error())
-			}
-			log.Printf("Truncated %s", table)
-		}
-		log.Println("Database cleared.")
-		return
-	}
-
-	areas, err := loadAreas("fixtures/seed_data.json")
-	if err != nil {
-		log.Fatalf("Could not load seed data: %s", err.Error())
+		return fmt.Errorf("Could not load seed data: %s", err.Error())
 	}
 
 	usr := &models.User{Email: testUserEmail, UserName: "Seed User"}
@@ -199,56 +183,64 @@ func main() {
 
 		randPass, err := generatePassword(32)
 		if err != nil {
-			log.Fatalf("Failed to generate a password: %s", err.Error())
+			return fmt.Errorf("Failed to generate a password: %s", err.Error())
 		}
 		passwordHash, err := bcrypt.GenerateFromPassword(
 			[]byte(randPass),
 			bcrypt.DefaultCost,
 		)
 		if err != nil {
-			log.Fatalf("Could not encrypt seed user pswd: %s", err.Error())
+			return fmt.Errorf("Could not encrypt seed user pswd: %s", err.Error())
 		}
 		usr.Password = string(passwordHash)
 
 		result = DB.WithContext(cntx).Create(usr)
 
 		if result.Error != nil {
-			log.Fatalf("Failed to create a user in the DB: %s", result.Error.Error())
+			return fmt.Errorf("Failed to create a user in the DB: %s", result.Error.Error())
 		}
 
-		createProject := func(project *projectSeed, areaID uuid.UUID, userID uuid.UUID) {
+		createProject := func(project *projectSeed, areaID uuid.UUID, userID uuid.UUID) error {
 			project.AreaID = areaID
 			project.UserID = userID
 
 			result := DB.WithContext(cntx).Create(project.Project)
 			if result.Error != nil {
-				log.Fatalf(
+				return fmt.Errorf(
 					"Failed to create a Project %s in the DB: %s",
 					project.Name,
 					result.Error.Error(),
 				)
 			}
 
-			createToDo := func(todo *todoSeed) {
+			createToDo := func(todo *todoSeed) error {
 				todo.ProjectID = project.ID
 
 				result := DB.WithContext(cntx).Create(todo.ToDo)
 				if result.Error != nil {
-					log.Fatalf(
+					return fmt.Errorf(
 						"Failed to create a ToDo %s in the DB: %s",
 						todo.Title,
 						result.Error.Error(),
 					)
 				}
+
+				return nil
 			}
 
 			for _, task := range project.tasks {
 				if task.prerequisite != nil {
-					createToDo(task.prerequisite)
+					if err := createToDo(task.prerequisite); err != nil {
+						return err
+					}
 					task.PrerequisiteID = &task.prerequisite.ID
 				}
-				createToDo(&task)
+				if err := createToDo(&task); err != nil {
+					return err
+				}
+
 			}
+			return nil
 		}
 
 		for _, area := range areas {
@@ -256,7 +248,7 @@ func main() {
 
 			result = DB.WithContext(cntx).Create(area.Area)
 			if result.Error != nil {
-				log.Fatalf(
+				return fmt.Errorf(
 					"Failed to create a Area %s in the DB: %s",
 					area.Name,
 					result.Error.Error(),
@@ -265,15 +257,20 @@ func main() {
 
 			for _, project := range area.projects {
 				if project.prerequisite != nil {
-					createProject(project.prerequisite, area.ID, usr.ID)
+					if err := createProject(project.prerequisite, area.ID, usr.ID); err != nil {
+						return err
+					}
 					project.PrerequisiteID = &project.prerequisite.ID
 				}
 
-				createProject(&project, area.ID, usr.ID)
+				if err := createProject(&project, area.ID, usr.ID); err != nil {
+					return err
+				}
 			}
 		}
 
 	} else {
-		log.Fatalf("%s", result.Error.Error())
+		return fmt.Errorf("%s", result.Error.Error())
 	}
+	return nil
 }
