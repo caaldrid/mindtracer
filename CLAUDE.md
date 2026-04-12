@@ -27,15 +27,7 @@ frontend/   React + TypeScript SPA
 
 ## Current Status
 
-| Component | Status |
-|-----------|--------|
-| Auth (register, login, JWT) | Complete |
-| PARA data models | Complete |
-| Handler/storage package split | Complete |
-| Integration test harness (testcontainers) | Complete |
-| PARA CRUD endpoints | In progress |
-| React frontend | In progress |
-| AI layer | Planned |
+See `TODO.md` in the repo root.
 
 ## Portfolio Guardrails
 
