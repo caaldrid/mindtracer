@@ -10,9 +10,6 @@ models/           GORM model structs
 setup/            Config loading (Viper), DB connect, migrations, seed
 ```
 
-**Key design decision:** handlers depend on storage interfaces, not concrete types.
-This enables the mock in `handlers/mock_test.go` for unit tests.
-
 ## Auth Flow
 
 - `POST /api/auth/register` — create user, bcrypt password
@@ -81,27 +78,6 @@ This is a portfolio project. Code quality matters. Flag violations when you see 
 - No `any` unless unavoidable — use concrete types or generics
 - No global state — wire dependencies through function arguments
 - Exported names get a doc comment; unexported ones only if the logic isn't obvious
-
-## Architecture Decision Records
-
-**Handler/storage interface split**
-Handlers depend on `storage.UserStorage` (interface), not the concrete GORM implementation.
-This makes the unit tests in `handlers/` possible — `mock_test.go` satisfies the interface without a real DB.
-Don't collapse these back into a single layer.
-
-**Real Postgres in integration tests (testcontainers), not mocks**
-`storage/` tests spin up an actual Postgres container via `testcontainers-go`.
-Decision: mocking the DB at the storage layer defeats the purpose of testing storage logic.
-A mock that returns what you tell it to will always pass — it won't catch broken queries or schema mismatches.
-
-**Viper for config over `os.Getenv`**
-Viper reads from `app.env` automatically and binds values to a typed `Config` struct.
-`os.Getenv` returns untyped strings and requires manual parsing.
-Viper gives type safety, defaults, and a single place to add new config values.
-
-**Gin over stdlib `net/http`**
-Gin provides route grouping, middleware chaining, and request binding out of the box.
-Stdlib would require building those manually. For a REST API with auth middleware and route groups, Gin reduces boilerplate significantly without hiding anything important.
 
 ## Next Up
 
