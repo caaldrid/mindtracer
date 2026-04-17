@@ -48,6 +48,7 @@ func main() {
 	default:
 		store := storage.Storage{
 			Users: storage.NewUserStorage(DB),
+			Areas: storage.NewAreaStorage(DB),
 		}
 		handlers.StartServer(config, store)
 	}
