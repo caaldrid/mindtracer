@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 
-	"github.com/caaldrid/mindtracer/backend/handlers"
+	"github.com/caaldrid/mindtracer/backend/server"
 	"github.com/caaldrid/mindtracer/backend/setup"
 	"github.com/caaldrid/mindtracer/backend/storage"
 )
@@ -50,6 +51,9 @@ func main() {
 			Users: storage.NewUserStorage(DB),
 			Areas: storage.NewAreaStorage(DB),
 		}
-		handlers.StartServer(config, store)
+		router := server.New(config, store)
+		if err := router.Run(fmt.Sprintf(":%s", config.ServerPort)); err != nil {
+			log.Fatal("Failed to start server", err)
+		}
 	}
 }

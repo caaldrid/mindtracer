@@ -1,17 +1,17 @@
-package handlers
+package server
 
 import (
-	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/caaldrid/mindtracer/backend/auth"
+	"github.com/caaldrid/mindtracer/backend/handlers"
 	"github.com/caaldrid/mindtracer/backend/setup"
 	"github.com/caaldrid/mindtracer/backend/storage"
 )
 
-func CORSMiddleware(allowedOrigin string) gin.HandlerFunc {
+func corsMiddleware(allowedOrigin string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Header("Access-Control-Allow-Origin", allowedOrigin)
 		c.Header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -26,22 +26,17 @@ func CORSMiddleware(allowedOrigin string) gin.HandlerFunc {
 	}
 }
 
-func ConfigRouter(c setup.Config, store storage.Storage) *gin.Engine {
+// New creates a gin.Engine with all middleware, route groups, and handlers wired up.
+func New(c setup.Config, store storage.Storage) *gin.Engine {
 	router := gin.Default()
-	router.Use(CORSMiddleware("*"))
+	router.Use(corsMiddleware("*"))
 
-	setupAccountHandler(store.Users, router, c)
+	authGroup := router.Group("/api/auth")
+	account := handlers.NewAccountHandler(store.Users, c.SecretKey, c.TokenLifespan)
+	account.RegisterRoutes(authGroup)
 
 	authorized := router.Group("/api/")
-	authorized.Use(jwtAuthMiddleware(c.SecretKey))
+	authorized.Use(auth.JWTMiddleware(c.SecretKey))
 
 	return router
-}
-
-func StartServer(c setup.Config, store storage.Storage) {
-	router := ConfigRouter(c, store)
-
-	if err := router.Run(fmt.Sprintf(":%s", c.ServerPort)); err != nil {
-		log.Fatal("Failed to start router", err)
-	}
 }

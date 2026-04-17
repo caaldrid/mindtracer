@@ -8,15 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/caaldrid/mindtracer/backend/auth"
 	"github.com/caaldrid/mindtracer/backend/models"
-	"github.com/caaldrid/mindtracer/backend/setup"
 	"github.com/caaldrid/mindtracer/backend/storage"
 )
 
-type accountHandler struct {
+type AccountHandler struct {
 	users         storage.UserStorage
 	secret        string
-	TokenLifespan int
+	tokenLifespan int
 }
 
 type authRegister struct {
@@ -30,19 +30,20 @@ type authLogin struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func setupAccountHandler(users storage.UserStorage, router *gin.Engine, c setup.Config) {
-	account := accountHandler{
+func NewAccountHandler(users storage.UserStorage, secret string, tokenLifespan int) *AccountHandler {
+	return &AccountHandler{
 		users:         users,
-		secret:        c.SecretKey,
-		TokenLifespan: c.TokenLifespan,
+		secret:        secret,
+		tokenLifespan: tokenLifespan,
 	}
-
-	g := router.Group("/api/auth")
-	g.POST("/register", account.register)
-	g.POST("/login", account.login)
 }
 
-func (a *accountHandler) register(ctx *gin.Context) {
+func (a *AccountHandler) RegisterRoutes(group *gin.RouterGroup) {
+	group.POST("/register", a.register)
+	group.POST("/login", a.login)
+}
+
+func (a *AccountHandler) register(ctx *gin.Context) {
 	var authInput authRegister
 
 	if err := ctx.ShouldBindJSON(&authInput); err != nil {
@@ -74,7 +75,7 @@ func (a *accountHandler) register(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, fmt.Sprintf("%s has been registered", newUser.UserName))
 }
 
-func (a *accountHandler) login(ctx *gin.Context) {
+func (a *AccountHandler) login(ctx *gin.Context) {
 	var authInput authLogin
 
 	if err := ctx.ShouldBindJSON(&authInput); err != nil {
@@ -96,7 +97,7 @@ func (a *accountHandler) login(ctx *gin.Context) {
 		return
 	}
 
-	token, err := createToken(foundUser.ID.String(), a.secret, a.TokenLifespan)
+	token, err := auth.CreateToken(foundUser.ID.String(), a.secret, a.tokenLifespan)
 	if err != nil {
 		ctx.JSON(
 			http.StatusInternalServerError,
