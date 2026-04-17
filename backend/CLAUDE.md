@@ -73,6 +73,11 @@ This is a portfolio project. Code quality matters. Flag violations when you see 
 **Interfaces**
 - Define interfaces where they are consumed, not where they are implemented
 - Keep interfaces small — only the methods the consumer actually needs
+- Storage interfaces must not reference or call other storage interfaces — cross-resource queries belong in the handler layer
+
+**DB constraint errors**
+- Catch Postgres constraint violations via `pgconn.PgError` (e.g. code `23505` for unique violations) instead of check-then-insert transactions
+- Map constraint errors to sentinel errors (e.g. `ErrAreaAlreadyExists`)
 
 **General Go**
 - No `any` unless unavoidable — use concrete types or generics

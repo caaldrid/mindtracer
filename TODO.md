@@ -9,6 +9,7 @@
 - [ ] Update frontend login form to send `email` instead of `username` (backend now uses `FindByEmail`)
 - [ ] Show login error feedback in UI — currently only console.error on failed login
 - [ ] Resolve `docs/notes/jwt-spa-workflows.md` — pick auth pattern, fix login state persistence and route protection
+- [ ] Investigate Go linters (golangci-lint, custom rules) to enforce code standards automatically
 - [ ] Add frontend .env.example documenting VITE_APP_BACKEND_URL
 - [ ] Resolve `docs/notes/llm-integration-go-backend.md` — define AI layer approach before implementing
 - [ ] Resolve `docs/notes/openapi-first-look.md` — pick design-first vs code-first, then draft openapi.yaml

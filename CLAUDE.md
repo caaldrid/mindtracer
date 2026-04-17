@@ -25,6 +25,10 @@ backend/    Go REST API
 frontend/   React + TypeScript SPA
 ```
 
+## Architecture Decisions
+
+ADRs live in `docs/designs/decisions/`. These are standing decisions — code must conform to accepted ADRs. If an ADR conflicts with a task, flag it before implementing.
+
 ## Current Status
 
 See `TODO.md` in the repo root.
