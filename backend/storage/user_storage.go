@@ -13,7 +13,7 @@ import (
 var ErrUserAlreadyExists = errors.New("user with that email already exists")
 
 type UserStorage interface {
-	FindByUsername(ctx context.Context, username string) (*models.User, error)
+	FindByEmail(ctx context.Context, email string) (*models.User, error)
 	Create(ctx context.Context, user *models.User) error
 }
 
@@ -25,9 +25,9 @@ func NewUserStorage(db *gorm.DB) UserStorage {
 	return &userStorage{db: db}
 }
 
-func (s *userStorage) FindByUsername(ctx context.Context, username string) (*models.User, error) {
+func (s *userStorage) FindByEmail(ctx context.Context, email string) (*models.User, error) {
 	var user models.User
-	err := s.db.WithContext(ctx).Where("user_name = ?", username).First(&user).Error
+	err := s.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}

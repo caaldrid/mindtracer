@@ -26,7 +26,7 @@ type authRegister struct {
 }
 
 type authLogin struct {
-	Username string `json:"username" binding:"required"`
+	Email    string `json:"email"    binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -82,9 +82,9 @@ func (a *accountHandler) login(ctx *gin.Context) {
 		return
 	}
 
-	foundUser, err := a.users.FindByUsername(ctx.Request.Context(), authInput.Username)
+	foundUser, err := a.users.FindByEmail(ctx.Request.Context(), authInput.Email)
 	if err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid UserName"})
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email"})
 		return
 	}
 
