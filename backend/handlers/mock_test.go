@@ -7,13 +7,13 @@ import (
 )
 
 type mockUserStorage struct {
-	createIfNotExistsErr error
-	findByUsernameUser   *models.User
-	findByUsernameErr    error
+	createErr          error
+	findByUsernameUser *models.User
+	findByUsernameErr  error
 }
 
-func (m *mockUserStorage) CreateIfNotExists(_ context.Context, _ *models.User) error {
-	return m.createIfNotExistsErr
+func (m *mockUserStorage) Create(_ context.Context, _ *models.User) error {
+	return m.createErr
 }
 
 func (m *mockUserStorage) FindByUsername(_ context.Context, _ string) (*models.User, error) {

@@ -30,9 +30,9 @@ type authLogin struct {
 	Password string `json:"password" binding:"required"`
 }
 
-func setupAccountHandler(store storage.Storage, router *gin.Engine, c setup.Config) {
+func setupAccountHandler(users storage.UserStorage, router *gin.Engine, c setup.Config) {
 	account := accountHandler{
-		users:         store.Users,
+		users:         users,
 		secret:        c.SecretKey,
 		TokenLifespan: c.TokenLifespan,
 	}
@@ -62,7 +62,7 @@ func (a *accountHandler) register(ctx *gin.Context) {
 		Email:    authInput.Email,
 	}
 
-	if err := a.users.CreateIfNotExists(ctx.Request.Context(), &newUser); err != nil {
+	if err := a.users.Create(ctx.Request.Context(), &newUser); err != nil {
 		if errors.Is(err, storage.ErrUserAlreadyExists) {
 			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
@@ -98,7 +98,10 @@ func (a *accountHandler) login(ctx *gin.Context) {
 
 	token, err := createToken(foundUser.ID.String(), a.secret, a.TokenLifespan)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate token: %s", err.Error())})
+		ctx.JSON(
+			http.StatusInternalServerError,
+			gin.H{"error": fmt.Sprintf("Failed to generate token: %s", err.Error())},
+		)
 		return
 	}
 

@@ -3,17 +3,18 @@ package storage
 import (
 	"context"
 	"errors"
-
-	"gorm.io/gorm"
+	"fmt"
 
 	"github.com/caaldrid/mindtracer/backend/models"
+	"github.com/jackc/pgx/v5/pgconn"
+	"gorm.io/gorm"
 )
 
-var ErrUserAlreadyExists = errors.New("user already exists for the given username")
+var ErrUserAlreadyExists = errors.New("user with that email already exists")
 
 type UserStorage interface {
 	FindByUsername(ctx context.Context, username string) (*models.User, error)
-	CreateIfNotExists(ctx context.Context, user *models.User) error
+	Create(ctx context.Context, user *models.User) error
 }
 
 type userStorage struct {
@@ -33,16 +34,13 @@ func (s *userStorage) FindByUsername(ctx context.Context, username string) (*mod
 	return &user, nil
 }
 
-func (s *userStorage) CreateIfNotExists(ctx context.Context, user *models.User) error {
-	return s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		var existing models.User
-		err := tx.Where("user_name = ?", user.UserName).First(&existing).Error
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		if err == nil {
+func (s *userStorage) Create(ctx context.Context, user *models.User) error {
+	if err := s.db.WithContext(ctx).Create(user).Error; err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
 			return ErrUserAlreadyExists
 		}
-		return tx.Create(user).Error
-	})
+		return fmt.Errorf("userStorage.Create: %w", err)
+	}
+	return nil
 }

@@ -30,7 +30,7 @@ func ConfigRouter(c setup.Config, store storage.Storage) *gin.Engine {
 	router := gin.Default()
 	router.Use(CORSMiddleware("*"))
 
-	setupAccountHandler(store, router, c)
+	setupAccountHandler(store.Users, router, c)
 
 	authorized := router.Group("/api/")
 	authorized.Use(jwtAuthMiddleware(c.SecretKey))
